@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e0e11">
+<title>مشاهد</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:#0e0e11;color:#eee;
+font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:0;z-index:20;background:#0e0e11f2;
+backdrop-filter:blur(12px);padding:10px 12px;border-bottom:1px solid #1e1e24}
+.brand{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.logo{width:28px;height:28px;border-radius:8px;
+background:linear-gradient(135deg,#ff2d55,#c2185b);position:relative;flex:0 0 auto}
+.logo:after{content:"";position:absolute;inset:0;margin:auto;width:0;height:0;
+border-left:9px solid #fff;border-top:6px solid transparent;
+border-bottom:6px solid transparent;transform:translateX(1px)}
+h1{font-size:16px;margin:0;font-weight:700}
+.sub{font-size:10px;color:#777;font-weight:400}
+.search{display:flex;gap:8px}
+input{flex:1;background:#1a1a20;border:1px solid #2a2a32;color:#eee;
+padding:11px 14px;border-radius:24px;font-size:14px;outline:none}
+input:focus{border-color:#ff2d55}
+button{border:0;font-family:inherit;cursor:pointer}
+.go{background:#ff2d55;color:#fff;border-radius:24px;padding:0 18px;font-weight:700;font-size:14px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{background:#1a1a20;color:#ccc;border:1px solid #2a2a32;padding:8px 15px;
+border-radius:20px;font-size:13px;white-space:nowrap;flex:0 0 auto}
+.chip.on{background:#ff2d55;color:#fff;border-color:#ff2d55}
+#grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 12px 90px}
+@media(min-width:620px){#grid{grid-template-columns:repeat(3,1fr)}}
+.card{background:#15151a;border-radius:12px;overflow:hidden;border:1px solid #1e1e24}
+.thumb{position:relative;aspect-ratio:16/9;background:#222;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.dur{position:absolute;bottom:6px;left:6px;background:#000c;font-size:11px;
+padding:2px 6px;border-radius:4px;font-weight:700}
+.meta{padding:9px 10px 12px}
+.ttl{font-size:12.5px;line-height:1.45;margin:0 0 5px;font-weight:600;
+display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ch{font-size:11px;color:#888;margin:0}
+.views{font-size:11px;color:#666;margin:4px 0 0}
+#player{position:fixed;inset:0;z-index:60;background:#000;display:none;flex-direction:column}
+#player.show{display:flex}
+#player.fs{position:fixed}
+.pbox{position:relative;width:100%;aspect-ratio:16/9;background:#000;flex:0 0 auto}
+#player.fs .pbox{aspect-ratio:auto;flex:1 1 auto;height:100%}
+#frame{position:absolute;inset:0;width:100%;height:100%;border:0}
+.pinfo{padding:12px 14px;background:#0e0e11;flex:1;overflow-y:auto}
+.pinfo h2{font-size:14px;margin:0 0 6px;line-height:1.5}
+.pinfo .ch{color:#ff2d55;font-size:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btn{background:#1e1e26;color:#ddd;padding:9px 14px;border-radius:10px;font-size:12px}
+.btn.act{background:#ff2d55;color:#fff}
+.btn.wide{flex:1;text-align:center}
+.close{position:absolute;top:10px;right:10px;z-index:5;background:#000b;
+color:#fff;width:36px;height:36px;border-radius:50%;font-size:20px;line-height:1}
+.msg{grid-column:1/-1;text-align:center;padding:50px 20px;color:#888;font-size:13px;line-height:1.8}
+.rate{display:none;gap:6px;margin-top:12px}
+.rate.show{display:flex}
+.note{font-size:11px;color:#666;padding:0 14px 14px;line-height:1.7}
+footer{padding:0 12px 26px;font-size:10.5px;color:#5a5a63;text-align:center;line-height:1.7}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo"></div>
+    <div>
+      <h1>مشاهد</h1>
+      <div class="sub">بلا إعلانات مزعجة</div>
+    </div>
+  </div>
+  <div class="search">
+    <input id="q" placeholder="ابحث عن فيديو..." enterkeyhint="search">
+    <button class="go" id="go">بحث</button>
+  </div>
+</header>
+
+<div class="chips" id="chips"></div>
+<div id="grid"></div>
+<footer>تطبيق غير رسمي، يعمل بواجهة YouTube Data API الرسمية.</footer>
+
+<div id="player">
+  <button class="close" id="close">×</button>
+  <div class="pbox"><iframe id="frame" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+  <div class="pinfo">
+    <h2 id="ptitle"></h2>
+    <p class="ch" id="pch"></p>
+    <div class="row">
+      <button class="btn" id="save">+ لاحقاً</button>
+      <button class="btn" id="share">مشاركة</button>
+      <button class="btn" id="fs">شاشة كاملة</button>
+      <button class="btn" id="spd">السرعة</button>
+      <button class="btn" id="sleep">مؤقت نوم</button>
+    </div>
+    <div class="rate" id="rate"></div>
+    <p class="note">إن توقف التشغيل جرّب إعادة الفتح أو تحديث الصفحة.</p>
+  </div>
+</div>
+
+<script>
+const API='ضع_مفتاح_API_هنا';
+const REGION='SA';
+const KEY_SAVE='mashahid_saved';
+const CATS=[
+ ['','الأكثر مشاهدة',''],
+ ['10','موسيقى','10'],
+ ['20','ألعاب','20'],
+ ['17','رياضة','17'],
+ ['24','ترفيه','24'],
+ ['23','ضحك','23'],
+ ['27','تعليم','27'],
+ ['28','تقنية','28'],
+ ['25','أخبار','25']
+];
+const grid=document.getElementById('grid');
+const chips=document.getElementById('chips');
+const player=document.getElementById('player');
+const frame=document.getElementById('frame');
+let current=null, timer=null, speed=1;
+
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function dur(iso){
+  const m=/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/.exec(iso||'');
+  if(!m)return '';
+  const h=+(m[1]||0),mi=+(m[2]||0),s=+(m[3]||0);
+  const p=n=>String(n).padStart(2,'0');
+  return h?h+':'+p(mi)+':'+p(s):mi+':'+p(s);
+}
+function num(n){
+  n=+n;
+  if(n>=1e9)return (n/1e9).toFixed(1)+' مليار مشاهدة';
+  if(n>=1e6)return (n/1e6).toFixed(1)+' مليون مشاهدة';
+  if(n>=1e3)return (n/1e3).toFixed(0)+' ألف مشاهدة';
+  return n+' مشاهدة';
+}
+function msg(t){grid.innerHTML='<div class="msg">'+t+'</div>'}
+
+chips.innerHTML=CATS.map((c,i)=>
+  '<button class="chip'+(i?'':' on')+'" data-cat="'+c[2]+'">'+c[1]+'</button>').join('');
+chips.onclick=e=>{
+  const b=e.target.closest('.chip'); if(!b)return;
+  [...chips.children].forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  document.getElementById('q').value='';
+  load(b.dataset.cat);
+};
+
+async function api(path,params){
+  const u=new URL('https://www.googleapis.com/youtube/v3/'+path);
+  Object.entries({...params,key:API,hl:'ar',regionCode:REGION}).forEach(([k,v])=>u.searchParams.set(k,v));
+  const r=await fetch(u);
+  if(!r.ok){
+    const j=await r.json().catch(()=>({}));
+    const reason=j?.error?.errors?.[0]?.reason||'';
+    if(reason==='quotaExceeded')throw new Error('انتهت حصة API لهذا اليوم. عد غداً أو استخدم مفتاحاً آخر.');
+    if(reason==='keyInvalid'||reason==='badRequest')throw new Error('المفتاح غير صحيح أو غير مفعّل.');
+    throw new Error('تعذر جلب البيانات ('+r.status+').');
+  }
+  return r.json();
+}
+
+async function load(cat){
+  msg('جارٍ التحميل...');
+  try{
+    const d=await api('videos',{part:'snippet,contentDetails,statistics',chart:'mostPopular',
+      maxResults:24,videoCategoryId:cat||''});
+    render(d.items||[]);
+  }catch(e){msg(esc(e.message))}
+}
+
+async function search(term){
+  if(!term.trim())return load('');
+  msg('جارٍ البحث...');
+  try{
+    const s=await api('search',{part:'snippet',q:term,type:'video',maxResults:24,order:'relevance'});
+    const ids=(s.items||[]).map(i=>i.id.videoId).filter(Boolean);
+    if(!ids.length)return msg('لا نتائج.');
+    const d=await api('videos',{part:'snippet,contentDetails,statistics',id:ids.join(',')});
+    render(d.items||[]);
+  }catch(e){msg(esc(e.message))}
+}
+
+function render(items){
+  if(!items.length)return msg('لا يوجد شيء هنا.');
+  grid.innerHTML=items.map(v=>{
+    const t=v.snippet.title;
+    return '<div class="card" data-id="'+v.id+'" data-t="'+esc(t)+'" data-c="'+esc(v.snippet.channelTitle)+'">'
+    +'<div class="thumb"><img loading="lazy" src="'+esc(v.snippet.thumbnails.medium?.url||v.snippet.thumbnails.default.url)+'" alt="">'
+    +'<span class="dur">'+dur(v.contentDetails.duration)+'</span></div>'
+    +'<div class="meta"><p class="ttl">'+esc(t)+'</p><p class="ch">'+esc(v.snippet.channelTitle)+'</p>'
+    +'<p class="views">'+num(v.statistics?.viewCount||0)+'</p></div></div>';
+  }).join('');
+}
+
+grid.onclick=e=>{
+  const c=e.target.closest('.card'); if(!c)return;
+  play(c.dataset.id,c.dataset.t,c.dataset.c);
+};
+
+function play(id,title,ch){
+  current={id,title,ch};
+  frame.src='https://www.youtube.com/embed/'+id+'?autoplay=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&hl=ar';
+  document.getElementById('ptitle').textContent=title;
+  document.getElementById('pch').textContent=ch;
+  player.classList.add('show');
+  const saved=JSON.parse(localStorage.getItem(KEY_SAVE)||'[]');
+  document.getElementById('save').textContent=saved.some(x=>x.id===id)?'✓ محفوظ':'+ لاحقاً';
+  speed=1; setRate(1);
+}
+
+document.getElementById('close').onclick=()=>{
+  player.classList.remove('show','fs');
+  frame.src=''; clearTimeout(timer); timer=null;
+};
+
+function cmd(f,args){
+  if(!frame.contentWindow)return;
+  frame.contentWindow.postMessage(JSON.stringify({event:'command',func:f,args:args||[]}),'*');
+}
+
+function setRate(r){
+  speed=r;
+  cmd('setPlaybackRate',[r]);
+  document.querySelectorAll('#rate .btn').forEach(b=>
+    b.classList.toggle('act',+b.dataset.r===r));
+}
+
+const rates=[0.5,0.75,1,1.25,1.5,2];
+document.getElementById('rate').innerHTML=rates.map(r=>
+  '<button class="btn" data-r="'+r+'">'+(r===1?'عادي':r+'×')+'</button>').join('');
+document.getElementById('rate').onclick=e=>{
+  const b=e.target.closest('.btn'); if(b)setRate(+b.dataset.r);
+};
+document.getElementById('spd').onclick=()=>document.getElementById('rate').classList.toggle('show');
+
+document.getElementById('sleep').onclick=e=>{
+  clearTimeout(timer);
+  const mins=prompt('إيقاف التشغيل بعد كم دقيقة؟','30');
+  if(!mins)return;
+  timer=setTimeout(()=>{cmd('pauseVideo');alert('تم إيقاف التشغيل بواسطة مؤقت النوم.');},(+mins)*60000);
+  e.target.textContent='نوم: '+mins+'د';
+  setTimeout(()=>e.target.textContent='مؤقت نوم',2500);
+};
+
+document.getElementById('save').onclick=e=>{
+  if(!current)return;
+  let saved=JSON.parse(localStorage.getItem(KEY_SAVE)||'[]');
+  if(saved.some(x=>x.id===current.id)){
+    saved=saved.filter(x=>x.id!==current.id);
+    e.target.textContent='+ لاحقاً';
+  }else{
+    saved.unshift(current);
+    e.target.textContent='✓ محفوظ';
+  }
+  localStorage.setItem(KEY_SAVE,JSON.stringify(saved.slice(0,200)));
+};
+
+document.getElementById('share').onclick=async()=>{
+  if(!current)return;
+  const url='https://youtu.be/'+current.id;
+  if(navigator.share){
+    try{await navigator.share({title:current.title,url})}catch(e){}
+  }else{
+    prompt('انسخ الرابط:',url);
+  }
+};
+
+document.getElementById('fs').onclick=()=>player.classList.toggle('fs');
+
+document.getElementById('go').onclick=()=>search(document.getElementById('q').value);
+document.getElementById('q').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){e.target.blur();search(e.target.value)}
+});
+
+load('');
+</script>
+</body>
+</html>
